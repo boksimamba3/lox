@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "serve": "ts-node main.ts",
+    "serve-example": "ts-node main.ts example.lox",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
