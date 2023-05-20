@@ -57,6 +57,7 @@ export class UnaryExpression implements Expression {
 
 export class VariableExpression implements Expression {
   constructor(readonly name: Token) {}
+
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitVariableExpression(this)
   }

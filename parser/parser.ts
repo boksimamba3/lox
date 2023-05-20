@@ -8,9 +8,12 @@ import {
   UnaryExpression,
   VariableExpression,
 } from '../ast/expression'
-import { ExpressionStatement, PrintStatement, VarStatement } from '../ast/statement'
-
-export type Statement = any
+import {
+  ExpressionStatement,
+  PrintStatement,
+  Statement,
+  VarStatement,
+} from '../ast/statement'
 
 export class Parser {
   private current = 0
@@ -18,24 +21,25 @@ export class Parser {
 
   constructor(private readonly tokens: Token[]) {}
 
-  parse(): { statements: Statement[]; errors: SyntaxError[] } {
+  parse(): [statements: Statement[], errors: SyntaxError[]] {
     this.errors = []
     const statements: Statement[] = []
 
     while (!this.isAtEnd()) {
       try {
         statements.push(this.declaration())
-      } catch {
+      } catch (err) {
+        console.log(err)
         this.synchronize()
       }
     }
 
-    return { statements, errors: this.errors }
+    return [statements, this.errors]
   }
 
   private declaration(): Statement {
     if (this.match(TokenType.Var)) {
-      this.varDeclaration()
+      return this.varDeclaration()
     }
 
     return this.statement()
@@ -139,6 +143,7 @@ export class Parser {
     if (this.match(TokenType.Bang, TokenType.Minus)) {
       const operator = this.previous()
       const right = this.unary()
+
       return new UnaryExpression(operator, right)
     }
 
@@ -149,7 +154,7 @@ export class Parser {
     if (this.match(TokenType.False)) return new LiteralExpression(false)
     if (this.match(TokenType.True)) return new LiteralExpression(true)
     if (this.match(TokenType.Nil)) return new LiteralExpression(null)
-    if ((TokenType.Number, TokenType.String))
+    if (this.match(TokenType.Number, TokenType.String))
       return new LiteralExpression(this.previous().literal)
 
     if (this.match(TokenType.Identifier))
@@ -200,16 +205,19 @@ export class Parser {
         return true
       }
     }
+
     return false
   }
 
   private check(type: TokenType): boolean {
     if (this.isAtEnd()) return false
+
     return this.peek().type === type
   }
 
   private advance(): Token {
     if (!this.isAtEnd()) this.current += 1
+
     return this.previous()
   }
 
