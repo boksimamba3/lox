@@ -12,7 +12,7 @@ import {
   ExpressionStatement,
   PrintStatement,
   Statement,
-  VarStatement,
+  VariableStatement,
 } from '../ast/statement'
 
 export class Parser {
@@ -55,7 +55,7 @@ export class Parser {
 
     this.consume(TokenType.Semicolon, "Expect ';' after variable declaration.")
 
-    return new VarStatement(name, initializer)
+    return new VariableStatement(name, initializer)
   }
 
   private statement(): Statement {

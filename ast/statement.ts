@@ -4,8 +4,9 @@ import { Token } from './token'
 export interface StatementVisitor<T> {
   visitExpressionStatement(stmt: ExpressionStatement): T
   visitPrintStatement(stmt: PrintStatement): T
-  visitVarStatement(stmt: VarStatement): T
+  visitVariableStatement(stmt: VariableStatement): T
 }
+
 export abstract class Statement {
   abstract accept<T>(visitor: StatementVisitor<T>): T
 }
@@ -25,10 +26,10 @@ export class PrintStatement implements Statement {
   }
 }
 
-export class VarStatement implements Statement {
+export class VariableStatement implements Statement {
   constructor(readonly name: Token, readonly initializer: Expression | null) {}
 
   accept<T>(visitor: StatementVisitor<T>): T {
-    return visitor.visitVarStatement(this)
+    return visitor.visitVariableStatement(this)
   }
 }

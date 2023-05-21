@@ -12,7 +12,7 @@ import {
   PrintStatement,
   Statement,
   StatementVisitor,
-  VarStatement,
+  VariableStatement,
 } from '../ast/statement'
 import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
@@ -52,7 +52,7 @@ export class Interpreter
     console.log(this.stringify(value))
   }
 
-  visitVarStatement(stmt: VarStatement): void {
+  visitVariableStatement(stmt: VariableStatement): void {
     let value = null
 
     if (stmt.initializer !== null) {
