@@ -72,22 +72,22 @@ export class Interpreter
 
     switch (expr.operator.type) {
       case TokenType.Greater:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return left > right
 
       case TokenType.GreaterEqual:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return left >= right
 
       case TokenType.Less:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return left < right
 
       case TokenType.LessEqual:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return left <= right
 
@@ -108,17 +108,17 @@ export class Interpreter
         throw new Error('Operands must be 2 numbers or at least 1 strings.')
 
       case TokenType.Minus:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return +left - +right
 
       case TokenType.Slash:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
 
         return +left / +right
 
       case TokenType.Star:
-        this.checkNumberOperands(expr.operator, left, right)
+        this.checkNumberOperands(left, right)
         return +left * +right
     }
 
@@ -141,7 +141,7 @@ export class Interpreter
       case TokenType.Bang:
         return !this.isTruthy(right)
       case TokenType.Minus:
-        this.checkNumberOperand(expr.operator, right)
+        this.checkNumberOperand(right)
         return -right
     }
 
@@ -157,13 +157,13 @@ export class Interpreter
     return this.globals.get(name)
   }
 
-  private checkNumberOperand(operator: Token, operand: Object) {
+  private checkNumberOperand(operand: Object) {
     if (typeof operand === 'number') return
 
     throw new Error('Operand must be a number.')
   }
 
-  private checkNumberOperands(operator: Token, left: Object, right: Object) {
+  private checkNumberOperands(left: Object, right: Object) {
     if (typeof left === 'number' && typeof right === 'number') return
 
     throw new Error('Operands must be numbers.')
