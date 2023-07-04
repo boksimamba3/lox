@@ -9,6 +9,7 @@ import {
   VariableExpression,
 } from '../ast/expression'
 import {
+  BlockStatement,
   ExpressionStatement,
   PrintStatement,
   Statement,
@@ -30,7 +31,7 @@ export class Interpreter
       for (const stmt of stmts) {
         this.execute(stmt)
       }
-    } catch {
+    } catch (err) {
       throw new Error('Runtime error.')
     }
   }
@@ -43,9 +44,29 @@ export class Interpreter
     return expr.accept(this)
   }
 
+  visitBlockStatement(stmt: BlockStatement): null {
+    this.executeBlock(stmt.stmts, new Environment(this.environment));
+
+    return null;
+  }
+
   visitExpressionStatement(stmt: ExpressionStatement): void {
     this.evaluate(stmt.expression)
   }
+
+  private executeBlock(stmts: Statement[], environment: Environment) {
+    const previous = this.environment;
+    try {
+      this.environment = environment;
+
+      for (let stmt of stmts) {
+        this.execute(stmt);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
+
 
   visitPrintStatement(stmt: PrintStatement): void {
     const value = this.evaluate(stmt.expression)

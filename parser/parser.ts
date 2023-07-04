@@ -10,6 +10,7 @@ import {
   VariableExpression,
 } from '../ast/expression'
 import {
+  BlockStatement,
   ExpressionStatement,
   PrintStatement,
   Statement,
@@ -62,6 +63,9 @@ export class Parser {
   private statement(): Statement {
     if (this.match(TokenType.Print)) {
       return this.printStatement()
+    }
+    if (this.match(TokenType.LeftBrace)) {
+      return new BlockStatement(this.block())
     }
 
     return this.expressionStatement()
@@ -188,6 +192,17 @@ export class Parser {
     }
 
     throw this.error('Expected expression.')
+  }
+
+  private block(): Statement[] {
+    const stmts: Statement[] = [];
+    while (!this.check(TokenType.RightBrace) && !this.isAtEnd()) {
+      stmts.push(this.declaration());
+    }
+
+    this.consume(TokenType.RightBrace, `Expect '}' after block.`);
+
+    return stmts;
   }
 
   private synchronize(): void {
