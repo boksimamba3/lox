@@ -12,14 +12,14 @@ export class Environment {
     this.values.set(name, value)
   }
 
-  assign(name: Token, value: Object): void {
+  assign(name: Token, value: Object | null): void {
     if (this.values.has(name.lexeme)) {
       this.values.set(name.lexeme, value)
 
       return
     }
 
-    throw new Error('Undefined variable.')
+    throw new Error(`Undefined variable ${name.lexeme}.`)
   }
 
   get(name: Token): Object | null {
@@ -27,6 +27,6 @@ export class Environment {
       return this.values.get(name.lexeme) ?? null
     }
 
-    throw new Error('Undefined variable.')
+    throw new Error(`Undefined variable ${name.lexeme}.`)
   }
 }

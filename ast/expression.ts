@@ -1,6 +1,7 @@
 import { Token } from './token'
 
 export interface ExpressionVisitor<T> {
+  visitAssignExpression(expr: AssignExpression): T
   visitBinaryExpression(expr: BinaryExpression): T
   visitGroupingExpression(expr: GroupingExpression): T
   visitLiteralExpression(expr: LiteralExpression): T
@@ -10,6 +11,17 @@ export interface ExpressionVisitor<T> {
 
 export abstract class Expression {
   abstract accept<T>(visitor: ExpressionVisitor<T>): T
+}
+
+export class AssignExpression implements Expression {
+  constructor(
+    readonly name: Token,
+    readonly value: Expression,
+  ) { }
+
+  accept<T>(visitor: ExpressionVisitor<T>) {
+    return visitor.visitAssignExpression(this)
+  }
 }
 
 export class BinaryExpression implements Expression {
@@ -29,7 +41,7 @@ export class BinaryExpression implements Expression {
 }
 
 export class GroupingExpression implements Expression {
-  constructor(readonly expression: Expression) {}
+  constructor(readonly expression: Expression) { }
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitGroupingExpression(this)
@@ -49,14 +61,14 @@ export class LiteralExpression implements Expression {
 }
 
 export class UnaryExpression implements Expression {
-  constructor(readonly operator: Token, readonly right: Expression) {}
+  constructor(readonly operator: Token, readonly right: Expression) { }
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitUnaryExpression(this)
   }
 }
 
 export class VariableExpression implements Expression {
-  constructor(readonly name: Token) {}
+  constructor(readonly name: Token) { }
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitVariableExpression(this)

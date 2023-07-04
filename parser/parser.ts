@@ -1,6 +1,7 @@
 import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
 import {
+  AssignExpression,
   BinaryExpression,
   Expression,
   GroupingExpression,
@@ -19,7 +20,7 @@ export class Parser {
   private current = 0
   private errors: SyntaxError[] = []
 
-  constructor(private readonly tokens: Token[]) {}
+  constructor(private readonly tokens: Token[]) { }
 
   parse(): [statements: Statement[], errors: SyntaxError[]] {
     this.errors = []
@@ -81,7 +82,26 @@ export class Parser {
   }
 
   private expression(): Expression {
-    return this.equality()
+    return this.assignment();
+  }
+
+  private assignment(): Expression {
+    const expr = this.equality();
+
+    if (this.match(TokenType.Equal)) {
+      const equals = this.previous();
+      const value = this.assignment();
+
+      if (expr instanceof VariableExpression) {
+        const name = expr.name;
+
+        return new AssignExpression(name, value);
+      }
+
+      this.error(`${equals} Invalid assignment target`,)
+    }
+
+    return expr;
   }
 
   private equality(): Expression {

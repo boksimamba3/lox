@@ -1,4 +1,5 @@
 import {
+  AssignExpression,
   BinaryExpression,
   Expression,
   ExpressionVisitor,
@@ -24,10 +25,10 @@ export class Interpreter
   readonly globals = new Environment()
   private environment = this.globals
 
-  interpret(stms: Statement[]): void {
+  interpret(stmts: Statement[]): void {
     try {
-      for (const s of stms) {
-        this.execute(s)
+      for (const stmt of stmts) {
+        this.execute(stmt)
       }
     } catch {
       throw new Error('Runtime error.')
@@ -60,6 +61,13 @@ export class Interpreter
     }
 
     this.environment.define(stmt.name.lexeme, value)
+  }
+
+  visitAssignExpression(expr: AssignExpression): Object | null {
+    const value = this.evaluate(expr.value);
+    this.environment.assign(expr.name, value);
+
+    return value;
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {
@@ -154,7 +162,7 @@ export class Interpreter
   }
 
   private lookUpVariable(name: Token, expr: Expression): Object | null {
-    return this.globals.get(name)
+    return this.environment.get(name)
   }
 
   private checkNumberOperand(operand: Object) {
