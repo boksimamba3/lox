@@ -6,11 +6,13 @@ export interface StatementVisitor<T> {
   visitPrintStatement(stmt: PrintStatement): T
   visitVariableStatement(stmt: VariableStatement): T
   visitBlockStatement(stmt: BlockStatement): T;
+  visitIfStatement(stmt: IfStatement): T;
 }
 
 export abstract class Statement {
   abstract accept<T>(visitor: StatementVisitor<T>): T
 }
+
 
 export class BlockStatement implements Statement {
   constructor(readonly stmts: Statement[]) { }
@@ -18,6 +20,18 @@ export class BlockStatement implements Statement {
     return visitor.visitBlockStatement(this)
   }
 }
+
+export class IfStatement implements Statement {
+  constructor(
+    readonly condition: Expression,
+    readonly thenBranch: Statement,
+    readonly elseBranch: Statement | null
+  ) { }
+  accept<T>(visitor: StatementVisitor<T>) {
+    return visitor.visitIfStatement(this)
+  }
+}
+
 
 export class ExpressionStatement implements Statement {
   constructor(readonly expression: Expression) { }

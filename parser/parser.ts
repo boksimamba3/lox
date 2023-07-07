@@ -12,6 +12,7 @@ import {
 import {
   BlockStatement,
   ExpressionStatement,
+  IfStatement,
   PrintStatement,
   Statement,
   VariableStatement,
@@ -61,6 +62,9 @@ export class Parser {
   }
 
   private statement(): Statement {
+    if (this.match(TokenType.If)) {
+      return this.ifStatement();
+    }
     if (this.match(TokenType.Print)) {
       return this.printStatement()
     }
@@ -69,6 +73,20 @@ export class Parser {
     }
 
     return this.expressionStatement()
+  }
+
+  private ifStatement(): Statement {
+    this.consume(TokenType.LeftParen, "Expect '(' after 'if'.");
+    const condition = this.expression();
+    this.consume(TokenType.RightParen, "Expect ')' after if condition");
+
+    const thenBranch = this.statement();
+    let elseBranch = null;
+    if (this.match(TokenType.Else)) {
+      elseBranch = this.statement();
+    }
+
+    return new IfStatement(condition, thenBranch, elseBranch)
   }
 
   private printStatement(): Statement {

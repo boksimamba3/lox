@@ -11,6 +11,7 @@ import {
 import {
   BlockStatement,
   ExpressionStatement,
+  IfStatement,
   PrintStatement,
   Statement,
   StatementVisitor,
@@ -42,6 +43,16 @@ export class Interpreter
 
   private evaluate(expr: Expression): Object | null {
     return expr.accept(this)
+  }
+
+  visitIfStatement(stmt: IfStatement): null {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch);
+    } else if (stmt.elseBranch !== null) {
+      this.execute(stmt.elseBranch);
+    }
+
+    return null;
   }
 
   visitBlockStatement(stmt: BlockStatement): null {
@@ -198,7 +209,7 @@ export class Interpreter
     throw new Error('Operands must be numbers.')
   }
 
-  private isTruthy(object: Object) {
+  private isTruthy(object: Object | null) {
     if (object === null) return false
     if (typeof object === 'boolean') return object
 
