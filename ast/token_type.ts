@@ -11,6 +11,7 @@ export enum TokenType {
   Semicolon, // ';'
   Slash, // '/'
   Star, // '*'
+  Percent, // %
 
   // One or two character tokens
   Bang, // '!'

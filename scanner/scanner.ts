@@ -8,7 +8,7 @@ export class Scanner {
   private current = 0
   private line = 1
 
-  constructor(private readonly source: string) {}
+  constructor(private readonly source: string) { }
 
   scanTokens(): Token[] {
     while (!this.isAtEnd()) {
@@ -54,6 +54,9 @@ export class Scanner {
         break
       case '*':
         this.addToken(TokenType.Star)
+        break
+      case '%':
+        this.addToken(TokenType.Percent)
         break
       case '!':
         this.addToken(this.match('=') ? TokenType.BangEqual : TokenType.Bang)

@@ -6,6 +6,7 @@ import {
   Expression,
   GroupingExpression,
   LiteralExpression,
+  LogicalExpression,
   UnaryExpression,
   VariableExpression,
 } from '../ast/expression'
@@ -16,6 +17,7 @@ import {
   PrintStatement,
   Statement,
   VariableStatement,
+  WhileStatement,
 } from '../ast/statement'
 
 export class Parser {
@@ -68,6 +70,9 @@ export class Parser {
     if (this.match(TokenType.Print)) {
       return this.printStatement()
     }
+    if (this.match(TokenType.While)) {
+      return this.whileStatement();
+    }
     if (this.match(TokenType.LeftBrace)) {
       return new BlockStatement(this.block())
     }
@@ -78,7 +83,7 @@ export class Parser {
   private ifStatement(): Statement {
     this.consume(TokenType.LeftParen, "Expect '(' after 'if'.");
     const condition = this.expression();
-    this.consume(TokenType.RightParen, "Expect ')' after if condition");
+    this.consume(TokenType.RightParen, "Expect ')' after if condition.");
 
     const thenBranch = this.statement();
     let elseBranch = null;
@@ -96,6 +101,16 @@ export class Parser {
     return new PrintStatement(value)
   }
 
+  private whileStatement(): Statement {
+    this.consume(TokenType.LeftParen, "Expect '(' after 'while'.");
+    const condition = this.expression();
+    this.consume(TokenType.RightParen, "Expect ')' after while condition.");
+
+    const stmt = this.statement();
+
+    return new WhileStatement(condition, stmt);
+  }
+
   private expressionStatement(): Statement {
     const value = this.expression()
     this.consume(TokenType.Semicolon, "Expect ';' after expression.")
@@ -108,7 +123,7 @@ export class Parser {
   }
 
   private assignment(): Expression {
-    const expr = this.equality();
+    const expr = this.or();
 
     if (this.match(TokenType.Equal)) {
       const equals = this.previous();
@@ -121,6 +136,30 @@ export class Parser {
       }
 
       this.error(`${equals} Invalid assignment target`,)
+    }
+
+    return expr;
+  }
+
+  private or(): Expression {
+    let expr = this.and();
+
+    while (this.match(TokenType.Or)) {
+      const operator = this.previous();
+      const right = this.and();
+      expr = new LogicalExpression(expr, operator, right);
+    }
+
+    return expr;
+  }
+
+  private and(): Expression {
+    let expr = this.equality();
+
+    while (this.match(TokenType.And)) {
+      const operator = this.previous();
+      const right = this.equality();
+      expr = new LogicalExpression(expr, operator, right);
     }
 
     return expr;
@@ -172,7 +211,7 @@ export class Parser {
   private factor(): Expression {
     let expr = this.unary()
 
-    while (this.match(TokenType.Slash, TokenType.Star)) {
+    while (this.match(TokenType.Slash, TokenType.Star, TokenType.Percent)) {
       const operator = this.previous()
       const right = this.unary()
       expr = new BinaryExpression(expr, operator, right)

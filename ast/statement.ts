@@ -7,6 +7,7 @@ export interface StatementVisitor<T> {
   visitVariableStatement(stmt: VariableStatement): T
   visitBlockStatement(stmt: BlockStatement): T;
   visitIfStatement(stmt: IfStatement): T;
+  visitWhileStatement(stmt: WhileStatement): T;
 }
 
 export abstract class Statement {
@@ -32,6 +33,15 @@ export class IfStatement implements Statement {
   }
 }
 
+export class WhileStatement implements Statement {
+  constructor(
+    readonly condition: Expression,
+    readonly stmt: Statement,
+  ) { }
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitWhileStatement(this);
+  }
+}
 
 export class ExpressionStatement implements Statement {
   constructor(readonly expression: Expression) { }

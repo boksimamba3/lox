@@ -5,6 +5,7 @@ import {
   ExpressionVisitor,
   GroupingExpression,
   LiteralExpression,
+  LogicalExpression,
   UnaryExpression,
   VariableExpression,
 } from '../ast/expression'
@@ -16,6 +17,7 @@ import {
   Statement,
   StatementVisitor,
   VariableStatement,
+  WhileStatement,
 } from '../ast/statement'
 import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
@@ -50,6 +52,14 @@ export class Interpreter
       this.execute(stmt.thenBranch);
     } else if (stmt.elseBranch !== null) {
       this.execute(stmt.elseBranch);
+    }
+
+    return null;
+  }
+
+  visitWhileStatement(stmt: WhileStatement): null {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.stmt);
     }
 
     return null;
@@ -160,10 +170,24 @@ export class Interpreter
       case TokenType.Star:
         this.checkNumberOperands(left, right)
         return +left * +right
+
+      case TokenType.Percent:
+        this.checkNumberOperands(left, right)
+
+        return +left % +right
     }
 
     // Unreachable.
     throw new Error('Unknown token type used as binary operator.')
+  }
+
+  visitLogicalExpression(expr: LogicalExpression): Object | null {
+    const left = this.evaluate(expr.left);
+    if (expr.operator.type === TokenType.Or) {
+      if (this.isTruthy(left)) return left;
+    } else if (!this.isTruthy(left)) return left;
+
+    return this.evaluate(expr.right);
   }
 
   visitGroupingExpression(expr: GroupingExpression): Object | null {

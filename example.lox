@@ -1,7 +1,9 @@
-var condition = 42;
-
-if (condition == 42) {
-  print "Truthy condition";
-} else {
-  print "Falsy condition";
+var a = 5;
+while (a > 0) {
+  if (a % 2 == 0) {
+    print "Even";
+  } else {
+    print "Odd";
+  }
+  a = a - 1;
 }

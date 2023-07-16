@@ -7,6 +7,7 @@ export interface ExpressionVisitor<T> {
   visitLiteralExpression(expr: LiteralExpression): T
   visitUnaryExpression(expr: UnaryExpression): T
   visitVariableExpression(expr: VariableExpression): T
+  visitLogicalExpression(expr: LogicalExpression): T
 }
 
 export abstract class Expression {
@@ -37,6 +38,22 @@ export class BinaryExpression implements Expression {
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitBinaryExpression(this)
+  }
+}
+
+export class LogicalExpression implements Expression {
+  constructor(
+    readonly left: Expression,
+    readonly operator: Token,
+    readonly right: Expression
+  ) {
+    this.left = left
+    this.operator = operator
+    this.right = right
+  }
+
+  accept<T>(visitor: ExpressionVisitor<T>) {
+    return visitor.visitLogicalExpression(this)
   }
 }
 
