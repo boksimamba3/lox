@@ -1,12 +1,11 @@
+import { LoxValue } from '../interpreter/lox_object'
 import { TokenType } from './token_type'
-
-export type LoxObject = object | string | number | boolean | null
 
 export class Token {
   constructor(
     readonly type: TokenType,
     readonly lexeme: string,
-    readonly literal: LoxObject,
+    readonly literal: LoxValue,
     readonly line: number
   ) {
     this.type = type

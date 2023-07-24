@@ -8,6 +8,7 @@ export interface ExpressionVisitor<T> {
   visitUnaryExpression(expr: UnaryExpression): T
   visitVariableExpression(expr: VariableExpression): T
   visitLogicalExpression(expr: LogicalExpression): T
+  visitCallExpression(expr: CallExpression): T
 }
 
 export abstract class Expression {
@@ -25,16 +26,24 @@ export class AssignExpression implements Expression {
   }
 }
 
+export class CallExpression implements Expression {
+  constructor(
+    readonly callee: Expression,
+    readonly token: Token,
+    readonly args: Expression[],
+  ) { }
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitCallExpression(this)
+  }
+}
+
 export class BinaryExpression implements Expression {
   constructor(
     readonly left: Expression,
     readonly operator: Token,
     readonly right: Expression
-  ) {
-    this.left = left
-    this.operator = operator
-    this.right = right
-  }
+  ) { }
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitBinaryExpression(this)
@@ -46,11 +55,7 @@ export class LogicalExpression implements Expression {
     readonly left: Expression,
     readonly operator: Token,
     readonly right: Expression
-  ) {
-    this.left = left
-    this.operator = operator
-    this.right = right
-  }
+  ) { }
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitLogicalExpression(this)
@@ -66,15 +71,11 @@ export class GroupingExpression implements Expression {
 }
 
 export class LiteralExpression implements Expression {
-  constructor(value: any) {
-    this.value = value
-  }
+  constructor(readonly value: any) { }
 
   accept<T>(visitor: ExpressionVisitor<T>) {
     return visitor.visitLiteralExpression(this)
   }
-
-  readonly value: any
 }
 
 export class UnaryExpression implements Expression {

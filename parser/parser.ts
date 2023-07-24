@@ -3,6 +3,7 @@ import { TokenType } from '../ast/token_type'
 import {
   AssignExpression,
   BinaryExpression,
+  CallExpression,
   Expression,
   GroupingExpression,
   LiteralExpression,
@@ -272,7 +273,38 @@ export class Parser {
       return new UnaryExpression(operator, right)
     }
 
-    return this.primary()
+    return this.call()
+  }
+
+  private call(): Expression {
+    let expr = this.primary();
+
+    while (true) {
+      if (this.match(TokenType.LeftParen)) {
+        expr = this.finishCall(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  private finishCall(callee: Expression): Expression {
+    const args: Expression[] = [];
+
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (args.length >= 255) {
+          this.error("Can't have more than 255 arguments");
+        }
+        args.push(this.expression());
+      } while (this.match(TokenType.Comma))
+    }
+
+    const paren = this.consume(TokenType.RightParen, "Expect ')' after arguments.");
+
+    return new CallExpression(callee, paren, args)
   }
 
   private primary(): Expression {

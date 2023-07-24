@@ -1,6 +1,7 @@
 import { keywords } from '../ast/keywords'
-import { LoxObject, Token } from '../ast/token'
+import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
+import { LoxValue } from '../interpreter/lox_object'
 
 export class Scanner {
   private readonly tokens: Token[] = []
@@ -146,7 +147,7 @@ export class Scanner {
     return this.source.charAt(this.current++)
   }
 
-  private addToken(type: TokenType, literal: LoxObject = null): void {
+  private addToken(type: TokenType, literal: LoxValue = null): void {
     const text = this.source.substring(this.start, this.current)
     this.tokens.push(new Token(type, text, literal, this.line))
   }

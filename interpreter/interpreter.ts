@@ -1,6 +1,7 @@
 import {
   AssignExpression,
   BinaryExpression,
+  CallExpression,
   Expression,
   ExpressionVisitor,
   GroupingExpression,
@@ -22,6 +23,8 @@ import {
 import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
 import { Environment } from './environment'
+import { LoxCallable } from './lox_callable'
+import { LoxValue } from './lox_object'
 
 export class Interpreter
   implements ExpressionVisitor<Object | null>, StatementVisitor<void>
@@ -110,6 +113,19 @@ export class Interpreter
     this.environment.assign(expr.name, value);
 
     return value;
+  }
+
+  visitCallExpression(expr: CallExpression): Object | null {
+    const callee = this.evaluate(expr.callee);
+
+    const args: LoxValue[] = [];
+    for (let arg of expr.args) {
+      args.push(this.evaluate(arg))
+    }
+
+    const fn = callee as LoxCallable;
+
+    return fn.call(this, args);
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {
