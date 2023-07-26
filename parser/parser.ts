@@ -21,6 +21,49 @@ import {
   WhileStatement,
 } from '../ast/statement'
 
+/**
+Parser grammar:
+  program      => declaration* EOF
+  declaration  => classDecl | funcDecl | varDecl | typeDecl | statement
+  classDecl    => "class" IDENTIFIER ( "<" IDENTIFIER )? "{" ( method | field )* "}"
+  method       => IDENTIFIER parameterList? ( ":" type )? block
+  field        => IDENTIFIER "=" expression ";"
+  funDecl      => "fun" function
+  function     => IDENTIFIER parameterList ( ":" type )? block
+  parameters   => IDENTIFIER ( ":" type )? ( "," IDENTIFIER ( ":" type )? )*
+  varDecl      => "var" IDENTIFIER ( ":" type )? ( "=" expression )? ";"
+  type         => ( "[" type ( "," type )* "]"
+                  | IDENTIFIER ( "<" type ( "," type )* ">" )? )
+                  ( "|" type )*
+  typeDecl     => "type" IDENTIFIER "=" type ";"
+  statement    => exprStmt | ifStmt | forStmt | printStmt | returnStmt | whileStmt
+                  | breakStmt | continueStmt | block
+  exprStmt     => expression ";"
+  ifStmt       => "if" "(" expression ")" statement ( "else" statement )?
+  forStmt      => "for" "(" ( varDecl | exprStmt | ";" ) expression? ";" expression? ")" statement
+  printStmt    => "print" expression ";"
+  returnStmt   => "return" expression? ";"
+  whileStmt    => "while" "(" expression ")" statement
+  block        => "{" declaration* "}" ;
+  expression   => series
+  series       => assignment ( "," assignment )*
+  assignment   => ( call "." )? IDENTIFIER "=" assignment | ternary
+  ternary      => logic_or ( "?" ternary ":" ternary )*
+  logic_or     => logic_and ( "or" logic_and )*
+  logic_and    => equality ( "and" equality )*
+  equality     => comparison ( ( "!=" | "==" ) comparison )
+  comparison   => term ( ( ">" | ">=" | "<" | "<=" ) term )*
+  term         => factor ( ( "+" | "-" ) factor )*
+  factor       => unary ( ( "/" | "*" ) unary )*
+  unary        => ( "!" | "-" ) unary | call
+  call         => primary ( "(" arguments? ")" | "." IDENTIFIER )*
+  arguments    => expression ( "," expression )*
+  primary      => NUMBER | STRING | "true" | "false" | "nil" | "(" expression ")"
+                  | IDENTIFIER | functionExpr | "super" . IDENTIFIER
+  functionExpr => "fun" IDENTIFIER? parameterList ( ":" type )? block
+  Reference: C Operator Precedence https://en.cppreference.com/w/c/language/operator_precedence
+*/
+
 export class Parser {
   private current = 0
   private errors: SyntaxError[] = []
