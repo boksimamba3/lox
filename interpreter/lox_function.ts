@@ -15,7 +15,7 @@ export class LoxFunction implements LoxCallable {
     for (let i = 0; i < this.declaration.params.length; i++) {
       const param = this.declaration.params[i];
       const argument = args[i];
-      environment.define(param.lexeme, args[i]);
+      environment.define(param.lexeme, argument);
     }
 
     interpreter.executeBlock(this.declaration.body, environment);
