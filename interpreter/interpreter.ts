@@ -13,6 +13,7 @@ import {
 import {
   BlockStatement,
   ExpressionStatement,
+  FunctionStatement,
   IfStatement,
   PrintStatement,
   Statement,
@@ -24,13 +25,25 @@ import { Token } from '../ast/token'
 import { TokenType } from '../ast/token_type'
 import { Environment } from './environment'
 import { LoxCallable } from './lox_callable'
+import { LoxFunction } from './lox_function'
 import { LoxValue } from './lox_object'
+
+function isLoxCallable(object: Object | null): object is LoxCallable {
+  return !!object && 'call' in object && typeof object.call === 'function';
+}
 
 export class Interpreter
   implements ExpressionVisitor<Object | null>, StatementVisitor<void>
 {
   readonly globals = new Environment()
   private environment = this.globals
+
+  constructor() {
+    this.globals.define('clock', {
+      arity: () => 0,
+      call: () => Date.now(),
+    })
+  }
 
   interpret(stmts: Statement[]): void {
     try {
@@ -50,6 +63,42 @@ export class Interpreter
     return expr.accept(this)
   }
 
+  visitFunctionStatement(stmt: FunctionStatement): null {
+    const fn = new LoxFunction(stmt);
+    this.environment.define(stmt.name.lexeme, fn);
+
+    return null;
+  }
+
+  visitBlockStatement(stmt: BlockStatement): null {
+    this.executeBlock(stmt.stmts, new Environment(this.environment));
+
+    return null;
+  }
+
+  visitExpressionStatement(stmt: ExpressionStatement): void {
+    this.evaluate(stmt.expression)
+  }
+
+  executeBlock(stmts: Statement[], environment: Environment) {
+    const previous = this.environment;
+    try {
+      this.environment = environment;
+
+      for (let stmt of stmts) {
+        this.execute(stmt);
+      }
+    } finally {
+      this.environment = previous;
+    }
+  }
+
+  visitPrintStatement(stmt: PrintStatement): void {
+    const value = this.evaluate(stmt.expression)
+
+    console.log(this.stringify(value))
+  }
+
   visitIfStatement(stmt: IfStatement): null {
     if (this.isTruthy(this.evaluate(stmt.condition))) {
       this.execute(stmt.thenBranch);
@@ -66,36 +115,6 @@ export class Interpreter
     }
 
     return null;
-  }
-
-  visitBlockStatement(stmt: BlockStatement): null {
-    this.executeBlock(stmt.stmts, new Environment(this.environment));
-
-    return null;
-  }
-
-  visitExpressionStatement(stmt: ExpressionStatement): void {
-    this.evaluate(stmt.expression)
-  }
-
-  private executeBlock(stmts: Statement[], environment: Environment) {
-    const previous = this.environment;
-    try {
-      this.environment = environment;
-
-      for (let stmt of stmts) {
-        this.execute(stmt);
-      }
-    } finally {
-      this.environment = previous;
-    }
-  }
-
-
-  visitPrintStatement(stmt: PrintStatement): void {
-    const value = this.evaluate(stmt.expression)
-
-    console.log(this.stringify(value))
   }
 
   visitVariableStatement(stmt: VariableStatement): void {
@@ -123,7 +142,15 @@ export class Interpreter
       args.push(this.evaluate(arg))
     }
 
-    const fn = callee as LoxCallable;
+    if (!isLoxCallable(callee)) {
+      throw new Error("Cal only call functions and classes.")
+    }
+
+    const fn = <LoxCallable>callee;
+
+    if (args.length !== fn.arity()) {
+      throw new Error(`Expected ${fn.arity()} arguments but got ${args.length}.`)
+    }
 
     return fn.call(this, args);
   }
@@ -133,7 +160,7 @@ export class Interpreter
     const right = this.evaluate(expr.right)
 
     if (left === null || right === null) {
-      throw Error('One of the operands is null')
+      throw Error('One of the operands is null.')
     }
 
     switch (expr.operator.type) {

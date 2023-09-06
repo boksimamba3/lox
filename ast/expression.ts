@@ -29,7 +29,7 @@ export class AssignExpression implements Expression {
 export class CallExpression implements Expression {
   constructor(
     readonly callee: Expression,
-    readonly token: Token,
+    readonly paren: Token,
     readonly args: Expression[],
   ) { }
 

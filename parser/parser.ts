@@ -14,6 +14,7 @@ import {
 import {
   BlockStatement,
   ExpressionStatement,
+  FunctionStatement,
   IfStatement,
   PrintStatement,
   Statement,
@@ -87,11 +88,34 @@ export class Parser {
   }
 
   private declaration(): Statement {
+    if (this.match(TokenType.Fun)) {
+      return this.functionDeclaration('function')
+    }
     if (this.match(TokenType.Var)) {
       return this.varDeclaration()
     }
 
     return this.statement()
+  }
+
+  private functionDeclaration(kind: string): Statement {
+    const name = this.consume(TokenType.Identifier, `Expect ${kind} name.`)
+    this.consume(TokenType.LeftParen, `Expect '(' after ${kind} name.`);
+    const params: Token[] = [];
+    if (!this.check(TokenType.RightParen)) {
+      do {
+        if (params.length >= 255) {
+          this.error("Can't have more than 255 parameters")
+        }
+        params.push(this.consume(TokenType.Identifier, 'Expect parameter name.'))
+      } while (this.match(TokenType.Comma))
+    }
+
+    this.consume(TokenType.RightParen, "Expect ')' after parameters.")
+    this.consume(TokenType.LeftBrace, `Expect '{' before ${kind} body.`)
+    const body = this.block();
+
+    return new FunctionStatement(name, params, body);
   }
 
   private varDeclaration(): Statement {
