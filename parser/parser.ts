@@ -17,6 +17,7 @@ import {
   FunctionStatement,
   IfStatement,
   PrintStatement,
+  ReturnStatement,
   Statement,
   VariableStatement,
   WhileStatement,
@@ -141,6 +142,9 @@ export class Parser {
     if (this.match(TokenType.Print)) {
       return this.printStatement()
     }
+    if (this.match(TokenType.Return)) {
+      return this.returnStatement();
+    }
     if (this.match(TokenType.While)) {
       return this.whileStatement();
     }
@@ -149,6 +153,18 @@ export class Parser {
     }
 
     return this.expressionStatement()
+  }
+
+  private returnStatement(): Statement {
+    const keyword = this.previous();
+    let value: Expression | null = null;
+    if (!this.check(TokenType.Semicolon)) {
+      value = this.expression();
+    }
+
+    this.consume(TokenType.Semicolon, "Expect ';' after return value")
+
+    return new ReturnStatement(keyword, value)
   }
 
   private forStatement(): Statement {

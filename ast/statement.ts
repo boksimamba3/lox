@@ -7,6 +7,7 @@ export interface StatementVisitor<T> {
   visitVariableStatement(stmt: VariableStatement): T
   visitBlockStatement(stmt: BlockStatement): T;
   visitFunctionStatement(stmt: FunctionStatement): T
+  visitReturnStatement(stmt: ReturnStatement): T
   visitIfStatement(stmt: IfStatement): T;
   visitWhileStatement(stmt: WhileStatement): T;
 }
@@ -30,6 +31,13 @@ export class FunctionStatement implements Statement {
   ) { }
   accept<T>(visitor: StatementVisitor<T>) {
     return visitor.visitFunctionStatement(this)
+  }
+}
+
+export class ReturnStatement implements Statement {
+  constructor(readonly keyword: Token, readonly value: Expression | null) { }
+  accept<T>(visitor: StatementVisitor<T>) {
+    return visitor.visitReturnStatement(this)
   }
 }
 

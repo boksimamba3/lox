@@ -1,6 +1,7 @@
 import { FunctionStatement } from "../ast/statement";
 import { Environment } from "./environment";
 import { Interpreter } from "./interpreter";
+import { LoxReturn } from "./lox-return";
 import { LoxCallable } from "./lox_callable";
 import { LoxValue } from "./lox_object";
 
@@ -10,6 +11,7 @@ export class LoxFunction implements LoxCallable {
   arity(): number {
     return this.declaration.params.length;
   }
+
   call(interpreter: Interpreter, args: LoxValue[]): LoxValue {
     const environment = new Environment(interpreter.globals);
     for (let i = 0; i < this.declaration.params.length; i++) {
@@ -18,7 +20,13 @@ export class LoxFunction implements LoxCallable {
       environment.define(param.lexeme, argument);
     }
 
-    interpreter.executeBlock(this.declaration.body, environment);
+    try {
+      interpreter.executeBlock(this.declaration.body, environment);
+    } catch (r: unknown) {
+      if (r instanceof LoxReturn) {
+        return r.value;
+      }
+    }
 
     return null;
   }

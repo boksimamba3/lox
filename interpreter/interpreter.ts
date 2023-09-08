@@ -16,6 +16,7 @@ import {
   FunctionStatement,
   IfStatement,
   PrintStatement,
+  ReturnStatement,
   Statement,
   StatementVisitor,
   VariableStatement,
@@ -27,6 +28,7 @@ import { Environment } from './environment'
 import { LoxCallable } from './lox_callable'
 import { LoxFunction } from './lox_function'
 import { LoxValue } from './lox_object'
+import { LoxReturn } from './lox-return'
 
 function isLoxCallable(object: Object | null): object is LoxCallable {
   return !!object && 'call' in object && typeof object.call === 'function';
@@ -63,6 +65,13 @@ export class Interpreter
     return expr.accept(this)
   }
 
+
+  visitBlockStatement(stmt: BlockStatement): null {
+    this.executeBlock(stmt.stmts, new Environment(this.environment));
+
+    return null;
+  }
+
   visitFunctionStatement(stmt: FunctionStatement): null {
     const fn = new LoxFunction(stmt);
     this.environment.define(stmt.name.lexeme, fn);
@@ -70,10 +79,11 @@ export class Interpreter
     return null;
   }
 
-  visitBlockStatement(stmt: BlockStatement): null {
-    this.executeBlock(stmt.stmts, new Environment(this.environment));
+  visitReturnStatement(stmt: ReturnStatement): void {
+    let value: LoxValue = null;
+    if (stmt.value) value = this.evaluate(stmt.value);
 
-    return null;
+    throw new LoxReturn(value);
   }
 
   visitExpressionStatement(stmt: ExpressionStatement): void {
