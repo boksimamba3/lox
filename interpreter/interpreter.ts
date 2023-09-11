@@ -73,7 +73,7 @@ export class Interpreter
   }
 
   visitFunctionStatement(stmt: FunctionStatement): null {
-    const fn = new LoxFunction(stmt);
+    const fn = new LoxFunction(stmt, this.environment);
     this.environment.define(stmt.name.lexeme, fn);
 
     return null;

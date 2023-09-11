@@ -6,14 +6,14 @@ import { LoxCallable } from "./lox_callable";
 import { LoxValue } from "./lox_object";
 
 export class LoxFunction implements LoxCallable {
-  constructor(private readonly declaration: FunctionStatement) { }
+  constructor(private readonly declaration: FunctionStatement, readonly closure: Environment) { }
 
   arity(): number {
     return this.declaration.params.length;
   }
 
   call(interpreter: Interpreter, args: LoxValue[]): LoxValue {
-    const environment = new Environment(interpreter.globals);
+    const environment = new Environment(this.closure);
     for (let i = 0; i < this.declaration.params.length; i++) {
       const param = this.declaration.params[i];
       const argument = args[i];
