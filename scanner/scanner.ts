@@ -74,7 +74,7 @@ export class Scanner {
       case '/':
         if (this.match('/')) {
           // A comment goes until the end of the line
-          while (this.peek() != '\n' && !this.isAtEnd()) this.advance()
+          while (this.peek() !== '\n' && !this.isAtEnd()) this.advance()
         } else {
           this.addToken(TokenType.Slash)
         }
