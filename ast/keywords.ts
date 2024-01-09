@@ -6,7 +6,7 @@ export const keywords: Map<string, TokenType> = new Map([
   ['else', TokenType.Else],
   ['false', TokenType.False],
   ['for', TokenType.For],
-  ['fun', TokenType.Fun],
+  ['function', TokenType.Function],
   ['if', TokenType.If],
   ['nil', TokenType.Nil],
   ['or', TokenType.Or],

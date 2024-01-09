@@ -89,7 +89,7 @@ export class Parser {
   }
 
   private declaration(): Statement {
-    if (this.match(TokenType.Fun)) {
+    if (this.match(TokenType.Function)) {
       return this.functionDeclaration('function')
     }
     if (this.match(TokenType.Var)) {
@@ -429,7 +429,7 @@ export class Parser {
 
       switch (this.peek().type) {
         case TokenType.Class:
-        case TokenType.Fun:
+        case TokenType.Function:
         case TokenType.Var:
         case TokenType.For:
         case TokenType.If:

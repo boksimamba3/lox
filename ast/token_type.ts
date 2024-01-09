@@ -33,7 +33,7 @@ export enum TokenType {
   Class,
   Else,
   False,
-  Fun,
+  Function,
   For,
   If,
   Nil,
