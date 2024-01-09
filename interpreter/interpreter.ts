@@ -153,7 +153,7 @@ export class Interpreter
     }
 
     if (!isLoxCallable(callee)) {
-      throw new Error("Cal only call functions and classes.")
+      throw new Error("Call only call functions and classes.")
     }
 
     const fn = <LoxCallable>callee;
