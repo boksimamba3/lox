@@ -55,7 +55,7 @@ export class IfStatement implements Statement {
 export class WhileStatement implements Statement {
   constructor(
     readonly condition: Expression,
-    readonly stmt: Statement,
+    readonly body: Statement,
   ) { }
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitWhileStatement(this);

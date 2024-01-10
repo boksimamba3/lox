@@ -121,7 +121,7 @@ export class Interpreter
 
   visitWhileStatement(stmt: WhileStatement): null {
     while (this.isTruthy(this.evaluate(stmt.condition))) {
-      this.execute(stmt.stmt);
+      this.execute(stmt.body);
     }
 
     return null;
