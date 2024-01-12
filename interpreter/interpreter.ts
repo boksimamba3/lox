@@ -40,6 +40,8 @@ export class Interpreter
   readonly globals = new Environment()
   private environment = this.globals
 
+  private readonly locals = new Map<Expression, number>()
+
   constructor() {
     this.globals.define('clock', {
       arity: () => 0,
@@ -65,6 +67,9 @@ export class Interpreter
     return expr.accept(this)
   }
 
+  resolve(expr: Expression, depth: number) {
+    this.locals.set(expr, depth)
+  }
 
   visitBlockStatement(stmt: BlockStatement): null {
     this.executeBlock(stmt.stmts, new Environment(this.environment));
@@ -138,10 +143,16 @@ export class Interpreter
   }
 
   visitAssignExpression(expr: AssignExpression): Object | null {
-    const value = this.evaluate(expr.value);
-    this.environment.assign(expr.name, value);
+    const value = this.evaluate(expr.value)
 
-    return value;
+    const distance = this.locals.get(expr);
+    if (distance !== undefined) {
+      this.environment.assignAt(distance, expr.name, value);
+    } else {
+      this.globals.assign(expr.name, value);
+    }
+
+    return value
   }
 
   visitCallExpression(expr: CallExpression): Object | null {
@@ -271,6 +282,11 @@ export class Interpreter
   }
 
   private lookUpVariable(name: Token, expr: Expression): Object | null {
+    const distance = this.locals.get(expr)
+    if (distance !== undefined) {
+      return this.environment.getAt(distance, name.lexeme)
+    }
+
     return this.environment.get(name)
   }
 

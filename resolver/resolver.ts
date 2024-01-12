@@ -25,9 +25,15 @@ import {
 import { Token } from "../ast/token"
 import { Interpreter } from "../interpreter/interpreter"
 
+const enum FunctionType {
+  NONE,
+  FUNCTION
+}
+
 export class Resolve
   implements ExpressionVisitor<void>, StatementVisitor<void> {
   private readonly scopes: Map<string, boolean>[] = []
+  private currentFunction: FunctionType = FunctionType.NONE;
 
   constructor(private readonly interpreter: Interpreter) { }
 
@@ -56,10 +62,12 @@ export class Resolve
   visitFunctionStatement(stmt: FunctionStatement): void {
     this.declare(stmt.name)
     this.define(stmt.name)
-    this.resolveFunction(stmt)
+    this.resolveFunction(stmt, FunctionType.FUNCTION)
   }
 
   visitReturnStatement(stmt: ReturnStatement): void {
+    if (this.currentFunction === FunctionType.NONE) this.error("Can't return from top-level code.")
+
     if (stmt.value !== null) this.resolve(stmt.value)
   }
 
@@ -121,6 +129,8 @@ export class Resolve
 
     const scope: Map<string, boolean> = this.scopes[this.scopes.length - 1]
 
+    if (scope.has(name.lexeme)) this.error(`Already a variable with ${name.lexeme} in this scope.`);
+
     scope.set(name.lexeme, false)
   }
 
@@ -132,10 +142,10 @@ export class Resolve
     scope.set(name.lexeme, true)
   }
 
-  private resolve(stmts: Statement[]): void
-  private resolve(stmt: Statement): void
-  private resolve(expr: Expression): void
-  private resolve(stmtOrExpr: Statement | Statement[] | Expression) {
+  resolve(stmts: Statement[]): void
+  resolve(stmt: Statement): void
+  resolve(expr: Expression): void
+  resolve(stmtOrExpr: Statement | Statement[] | Expression) {
     if (Array.isArray(stmtOrExpr)) {
       for (let stmt of stmtOrExpr) {
         this.resolve(stmt)
@@ -148,14 +158,15 @@ export class Resolve
   private resolveLocal(expr: Expression, name: Token) {
     for (let i = this.scopes.length - 1; i >= 0; i--) {
       if (this.scopes[i].has(name.lexeme)) {
-        // TODO: add resolve to interpreter
-        //this.interpreter.resolve(expr, this.scopes.length - 1 - i)
+        this.interpreter.resolve(expr, this.scopes.length - 1 - i)
         return
       }
     }
   }
 
-  private resolveFunction(fn: FunctionStatement) {
+  private resolveFunction(fn: FunctionStatement, type: FunctionType) {
+    const enclosingFunction = this.currentFunction
+    this.currentFunction = type
     this.beginScope()
 
     for (const param of fn.params) {
@@ -165,6 +176,7 @@ export class Resolve
     this.resolve(fn.body)
 
     this.endScope()
+    this.currentFunction = enclosingFunction
   }
 
   private beginScope(): void {

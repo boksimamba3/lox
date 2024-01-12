@@ -2,6 +2,7 @@ import { readFile } from 'fs/promises'
 import { Scanner } from './scanner/scanner'
 import { Parser } from './parser/parser'
 import { Interpreter } from './interpreter/interpreter'
+import { Resolve } from './resolver/resolver'
 
 const filename = process.argv[2]
 
@@ -16,6 +17,8 @@ try {
   const parser = new Parser(tokens)
   const [statements] = parser.parse()
   const interpreter = new Interpreter()
+  const resolver = new Resolve(interpreter);
+  resolver.resolve(statements)
   interpreter.interpret(statements)
 } catch (err) {
   console.error(err)
