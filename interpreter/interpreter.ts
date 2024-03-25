@@ -9,9 +9,10 @@ import {
   LogicalExpression,
   UnaryExpression,
   VariableExpression,
-} from '../ast/expression'
+} from "../ast/expression";
 import {
   BlockStatement,
+  ClassStatement,
   ExpressionStatement,
   FunctionStatement,
   IfStatement,
@@ -21,58 +22,67 @@ import {
   StatementVisitor,
   VariableStatement,
   WhileStatement,
-} from '../ast/statement'
-import { Token } from '../ast/token'
-import { TokenType } from '../ast/token_type'
-import { Environment } from './environment'
-import { LoxCallable } from './lox_callable'
-import { LoxFunction } from './lox_function'
-import { LoxValue } from './lox_object'
-import { LoxReturn } from './lox-return'
+} from "../ast/statement";
+import { Token } from "../ast/token";
+import { TokenType } from "../ast/token_type";
+import { Environment } from "./environment";
+import { LoxCallable } from "./lox_callable";
+import { LoxFunction } from "./lox_function";
+import { LoxValue } from "./lox_object";
+import { LoxReturn } from "./lox-return";
+import { LoxClass } from "./lox_class";
 
 function isLoxCallable(object: Object | null): object is LoxCallable {
-  return !!object && 'call' in object && typeof object.call === 'function';
+  return !!object && "call" in object && typeof object.call === "function";
 }
 
 export class Interpreter
   implements ExpressionVisitor<Object | null>, StatementVisitor<void>
 {
-  readonly globals = new Environment()
-  private environment = this.globals
+  readonly globals = new Environment();
+  private environment = this.globals;
 
-  private readonly locals = new Map<Expression, number>()
+  private readonly locals = new Map<Expression, number>();
 
   constructor() {
-    this.globals.define('clock', {
+    this.globals.define("clock", {
       arity: () => 0,
       call: () => Date.now(),
-    })
+    });
   }
 
   interpret(stmts: Statement[]): void {
     try {
       for (const stmt of stmts) {
-        this.execute(stmt)
+        this.execute(stmt);
       }
     } catch (err) {
-      throw new Error('Runtime error.')
+      throw new Error("Runtime error.");
     }
   }
 
   private execute(stmt: Statement) {
-    stmt.accept(this)
+    stmt.accept(this);
   }
 
   private evaluate(expr: Expression): Object | null {
-    return expr.accept(this)
+    return expr.accept(this);
   }
 
   resolve(expr: Expression, depth: number) {
-    this.locals.set(expr, depth)
+    this.locals.set(expr, depth);
   }
 
   visitBlockStatement(stmt: BlockStatement): null {
     this.executeBlock(stmt.stmts, new Environment(this.environment));
+
+    return null;
+  }
+
+  visitClassStatement(stmt: ClassStatement): null {
+    this.environment.define(stmt.name.lexeme, null);
+    const cls = new LoxClass(stmt.name.lexeme);
+    this.environment.assign(stmt.name, cls);
 
     return null;
   }
@@ -92,7 +102,7 @@ export class Interpreter
   }
 
   visitExpressionStatement(stmt: ExpressionStatement): void {
-    this.evaluate(stmt.expression)
+    this.evaluate(stmt.expression);
   }
 
   executeBlock(stmts: Statement[], environment: Environment) {
@@ -109,9 +119,9 @@ export class Interpreter
   }
 
   visitPrintStatement(stmt: PrintStatement): void {
-    const value = this.evaluate(stmt.expression)
+    const value = this.evaluate(stmt.expression);
 
-    console.log(this.stringify(value))
+    console.log(this.stringify(value));
   }
 
   visitIfStatement(stmt: IfStatement): null {
@@ -133,17 +143,17 @@ export class Interpreter
   }
 
   visitVariableStatement(stmt: VariableStatement): void {
-    let value = null
+    let value = null;
 
     if (stmt.initializer !== null) {
-      value = this.evaluate(stmt.initializer)
+      value = this.evaluate(stmt.initializer);
     }
 
-    this.environment.define(stmt.name.lexeme, value)
+    this.environment.define(stmt.name.lexeme, value);
   }
 
   visitAssignExpression(expr: AssignExpression): Object | null {
-    const value = this.evaluate(expr.value)
+    const value = this.evaluate(expr.value);
 
     const distance = this.locals.get(expr);
     if (distance !== undefined) {
@@ -152,7 +162,7 @@ export class Interpreter
       this.globals.assign(expr.name, value);
     }
 
-    return value
+    return value;
   }
 
   visitCallExpression(expr: CallExpression): Object | null {
@@ -160,89 +170,91 @@ export class Interpreter
 
     const args: LoxValue[] = [];
     for (let arg of expr.args) {
-      args.push(this.evaluate(arg))
+      args.push(this.evaluate(arg));
     }
 
     if (!isLoxCallable(callee)) {
-      throw new Error("Call only call functions and classes.")
+      throw new Error("Call only call functions and classes.");
     }
 
     const fn = <LoxCallable>callee;
 
     if (args.length !== fn.arity()) {
-      throw new Error(`Expected ${fn.arity()} arguments but got ${args.length}.`)
+      throw new Error(
+        `Expected ${fn.arity()} arguments but got ${args.length}.`
+      );
     }
 
     return fn.call(this, args);
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {
-    const left = this.evaluate(expr.left)
-    const right = this.evaluate(expr.right)
+    const left = this.evaluate(expr.left);
+    const right = this.evaluate(expr.right);
 
     if (left === null || right === null) {
-      throw Error('One of the operands is null.')
+      throw Error("One of the operands is null.");
     }
 
     switch (expr.operator.type) {
       case TokenType.Greater:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return left > right
+        return left > right;
 
       case TokenType.GreaterEqual:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return left >= right
+        return left >= right;
 
       case TokenType.Less:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return left < right
+        return left < right;
 
       case TokenType.LessEqual:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return left <= right
+        return left <= right;
 
       case TokenType.BangEqual:
-        return !this.isEqual(left, right)
+        return !this.isEqual(left, right);
 
       case TokenType.EqualEqual:
-        return this.isEqual(left, right)
+        return this.isEqual(left, right);
 
       case TokenType.Plus:
-        if (typeof left === 'number' && typeof right === 'number') {
-          return left + right
+        if (typeof left === "number" && typeof right === "number") {
+          return left + right;
         }
-        if (typeof left === 'string' || typeof right === 'string') {
-          return `${left}${right}`
+        if (typeof left === "string" || typeof right === "string") {
+          return `${left}${right}`;
         }
 
-        throw new Error('Operands must be 2 numbers or at least 1 strings.')
+        throw new Error("Operands must be 2 numbers or at least 1 strings.");
 
       case TokenType.Minus:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return +left - +right
+        return +left - +right;
 
       case TokenType.Slash:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return +left / +right
+        return +left / +right;
 
       case TokenType.Star:
-        this.checkNumberOperands(left, right)
-        return +left * +right
+        this.checkNumberOperands(left, right);
+        return +left * +right;
 
       case TokenType.Percent:
-        this.checkNumberOperands(left, right)
+        this.checkNumberOperands(left, right);
 
-        return +left % +right
+        return +left % +right;
     }
 
     // Unreachable.
-    throw new Error('Unknown token type used as binary operator.')
+    throw new Error("Unknown token type used as binary operator.");
   }
 
   visitLogicalExpression(expr: LogicalExpression): Object | null {
@@ -255,67 +267,67 @@ export class Interpreter
   }
 
   visitGroupingExpression(expr: GroupingExpression): Object | null {
-    return this.evaluate(expr.expression)
+    return this.evaluate(expr.expression);
   }
 
   visitLiteralExpression(expr: LiteralExpression): Object {
-    return expr.value
+    return expr.value;
   }
 
   visitUnaryExpression(expr: UnaryExpression): Object {
-    const right: any = this.evaluate(expr.right)
+    const right: any = this.evaluate(expr.right);
 
     switch (expr.operator.type) {
       case TokenType.Bang:
-        return !this.isTruthy(right)
+        return !this.isTruthy(right);
       case TokenType.Minus:
-        this.checkNumberOperand(right)
-        return -right
+        this.checkNumberOperand(right);
+        return -right;
     }
 
     // Unreachable.
-    throw new Error('Unknown token type used as unary operator.')
+    throw new Error("Unknown token type used as unary operator.");
   }
 
   visitVariableExpression(expr: VariableExpression): Object | null {
-    return this.lookUpVariable(expr.name, expr)
+    return this.lookUpVariable(expr.name, expr);
   }
 
   private lookUpVariable(name: Token, expr: Expression): Object | null {
-    const distance = this.locals.get(expr)
+    const distance = this.locals.get(expr);
     if (distance !== undefined) {
-      return this.environment.getAt(distance, name.lexeme)
+      return this.environment.getAt(distance, name.lexeme);
     }
 
-    return this.environment.get(name)
+    return this.environment.get(name);
   }
 
   private checkNumberOperand(operand: Object) {
-    if (typeof operand === 'number') return
+    if (typeof operand === "number") return;
 
-    throw new Error('Operand must be a number.')
+    throw new Error("Operand must be a number.");
   }
 
   private checkNumberOperands(left: Object, right: Object) {
-    if (typeof left === 'number' && typeof right === 'number') return
+    if (typeof left === "number" && typeof right === "number") return;
 
-    throw new Error('Operands must be numbers.')
+    throw new Error("Operands must be numbers.");
   }
 
   private isTruthy(object: Object | null) {
-    if (object === null) return false
-    if (typeof object === 'boolean') return object
+    if (object === null) return false;
+    if (typeof object === "boolean") return object;
 
-    return true
+    return true;
   }
 
   private isEqual(a: Object, b: Object) {
-    return a === b
+    return a === b;
   }
 
   private stringify(object: Object | null): string {
-    if (object === null) return 'nil'
+    if (object === null) return "nil";
 
-    return object.toString()
+    return object.toString();
   }
 }
