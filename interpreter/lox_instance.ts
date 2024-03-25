@@ -11,6 +11,10 @@ export class LoxInstance {
       return this.fields.get(name.lexeme);
     }
 
+    const method = this.cls.findMethod(name.lexeme);
+
+    if (method !== null) return method;
+
     throw new Error(`Undefined property '${name.lexeme}'.`);
   }
 

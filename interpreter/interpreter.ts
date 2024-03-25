@@ -84,7 +84,15 @@ export class Interpreter
 
   visitClassStatement(stmt: ClassStatement): null {
     this.environment.define(stmt.name.lexeme, null);
-    const cls = new LoxClass(stmt.name.lexeme);
+
+    const methods = new Map<string, LoxFunction>();
+    for (const method of stmt.methods) {
+      const fn = new LoxFunction(method, this.environment);
+      methods.set(method.name.lexeme, fn);
+    }
+
+    const cls = new LoxClass(stmt.name.lexeme, methods);
+
     this.environment.assign(stmt.name, cls);
 
     return null;

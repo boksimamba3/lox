@@ -31,6 +31,7 @@ import { Interpreter } from "../interpreter/interpreter";
 const enum FunctionType {
   NONE,
   FUNCTION,
+  METHOD,
 }
 
 export class Resolve
@@ -66,6 +67,11 @@ export class Resolve
   visitClassStatement(stmt: ClassStatement): void {
     this.declare(stmt.name);
     this.define(stmt.name);
+
+    for (const method of stmt.methods) {
+      const declaration = FunctionType.METHOD;
+      this.resolveFunction(method, declaration);
+    }
   }
 
   visitFunctionStatement(stmt: FunctionStatement): void {
