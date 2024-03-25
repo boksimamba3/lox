@@ -4,9 +4,11 @@ import {
   CallExpression,
   Expression,
   ExpressionVisitor,
+  GetExpression,
   GroupingExpression,
   LiteralExpression,
   LogicalExpression,
+  SetExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -133,6 +135,15 @@ export class Resolve
     for (const arg of expr.args) {
       this.resolve(arg);
     }
+  }
+
+  visitGetExpression(expr: GetExpression): void {
+    this.resolve(expr.object);
+  }
+
+  visitSetExpression(expr: SetExpression): void {
+    this.resolve(expr.value);
+    this.resolve(expr.object);
   }
 
   private declare(name: Token) {

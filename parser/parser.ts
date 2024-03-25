@@ -5,9 +5,11 @@ import {
   BinaryExpression,
   CallExpression,
   Expression,
+  GetExpression,
   GroupingExpression,
   LiteralExpression,
   LogicalExpression,
+  SetExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -285,6 +287,11 @@ export class Parser {
       }
 
       this.error(`${equals} Invalid assignment target`);
+    } else if (expr instanceof GetExpression) {
+      const get = expr;
+      const value = this.assignment();
+
+      return new SetExpression(get.object, get.name, value);
     }
 
     return expr;
@@ -386,6 +393,12 @@ export class Parser {
     while (true) {
       if (this.match(TokenType.LeftParen)) {
         expr = this.finishCall(expr);
+      } else if (this.match(TokenType.Dot)) {
+        const name = this.consume(
+          TokenType.Identifier,
+          "Expect property name after '.'."
+        );
+        expr = new GetExpression(expr, name);
       } else {
         break;
       }

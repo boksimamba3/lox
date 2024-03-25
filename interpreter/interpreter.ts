@@ -4,9 +4,11 @@ import {
   CallExpression,
   Expression,
   ExpressionVisitor,
+  GetExpression,
   GroupingExpression,
   LiteralExpression,
   LogicalExpression,
+  SetExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -31,6 +33,7 @@ import { LoxFunction } from "./lox_function";
 import { LoxValue } from "./lox_object";
 import { LoxReturn } from "./lox-return";
 import { LoxClass } from "./lox_class";
+import { LoxInstance } from "./lox_instance";
 
 function isLoxCallable(object: Object | null): object is LoxCallable {
   return !!object && "call" in object && typeof object.call === "function";
@@ -186,6 +189,28 @@ export class Interpreter
     }
 
     return fn.call(this, args);
+  }
+
+  visitGetExpression(expr: GetExpression): Object | null {
+    const object = this.evaluate(expr.object);
+    if (object instanceof LoxInstance) {
+      return (object as LoxInstance).get(expr.name);
+    }
+
+    throw new Error("Only instances have properties.");
+  }
+
+  visitSetExpression(expr: SetExpression): Object | null {
+    const object = this.evaluate(expr.object);
+
+    if (!(object instanceof LoxInstance)) {
+      throw new Error("Only instances have fields.");
+    }
+
+    const value = this.evaluate(expr.value);
+    (object as LoxInstance).set(expr.name, value);
+
+    return value;
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {
