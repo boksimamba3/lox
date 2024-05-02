@@ -1,7 +1,16 @@
-class User {
-  name() {
-    print "Hello Crafting Interpreters";
+class Breakfast {
+  init(fruit) {
+    this.fruit = fruit;
   }
 }
 
-User().name(); 
+class Brunch < Breakfast {
+  init(vegetable, fruit) {
+    super.init(fruit);
+    this.vegetable = vegetable;
+  }
+}
+
+var b = Brunch("Broccoli", "Apple");
+print b.vegetable;
+print b.fruit;

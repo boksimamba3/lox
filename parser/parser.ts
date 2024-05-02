@@ -294,13 +294,11 @@ export class Parser {
 
         return new AssignExpression(name, value);
       }
+      if (expr instanceof GetExpression) {
+        return new SetExpression(expr.object, expr.name, value);
+      }
 
       this.error(`${equals} Invalid assignment target`);
-    } else if (expr instanceof GetExpression) {
-      const get = expr;
-      const value = this.assignment();
-
-      return new SetExpression(get.object, get.name, value);
     }
 
     return expr;
