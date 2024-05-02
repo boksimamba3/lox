@@ -1,4 +1,4 @@
-import { Expression } from "./expression";
+import { Expression, VariableExpression } from "./expression";
 import { Token } from "./token";
 
 export interface StatementVisitor<T> {
@@ -84,7 +84,11 @@ export class VariableStatement implements Statement {
 }
 
 export class ClassStatement implements Statement {
-  constructor(readonly name: Token, readonly methods: FunctionStatement[]) {}
+  constructor(
+    readonly name: Token,
+    readonly superClass: VariableExpression | null,
+    readonly methods: FunctionStatement[]
+  ) {}
 
   accept<T>(visitor: StatementVisitor<T>) {
     return visitor.visitClassStatement(this);

@@ -10,6 +10,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  ThisExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -107,6 +108,13 @@ export class Parser {
 
   private classDeclaration(): Statement {
     const name = this.consume(TokenType.Identifier, "Expect class name.");
+
+    let superClass: VariableExpression | null = null;
+    if (this.match(TokenType.Less)) {
+      this.consume(TokenType.Identifier, "Expect superclass name.");
+      superClass = new VariableExpression(this.previous());
+    }
+
     this.consume(TokenType.LeftBrace, "Expect '{' before class body.");
 
     const methods: FunctionStatement[] = [];
@@ -117,7 +125,7 @@ export class Parser {
 
     this.consume(TokenType.RightBrace, "Expect '}' after class");
 
-    return new ClassStatement(name, methods);
+    return new ClassStatement(name, superClass, methods);
   }
 
   private functionDeclaration(kind: string): FunctionStatement {
@@ -433,6 +441,17 @@ export class Parser {
     if (this.match(TokenType.Nil)) return new LiteralExpression(null);
     if (this.match(TokenType.Number, TokenType.String))
       return new LiteralExpression(this.previous().literal);
+    if (this.match(TokenType.This)) return new ThisExpression(this.previous());
+    if (this.match(TokenType.Super)) {
+      const keyword = this.previous();
+      this.consume(TokenType.Dot, "Expect '.' after 'super'.");
+      const method = this.consume(
+        TokenType.Identifier,
+        "Expect superclass method name."
+      );
+
+      //return new SuperExpression(keyword, method);
+    }
 
     if (this.match(TokenType.Identifier))
       return new VariableExpression(this.previous());

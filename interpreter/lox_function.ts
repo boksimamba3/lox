@@ -3,10 +3,15 @@ import { Environment } from "./environment";
 import { Interpreter } from "./interpreter";
 import { LoxReturn } from "./lox-return";
 import { LoxCallable } from "./lox_callable";
+import { LoxInstance } from "./lox_instance";
 import { LoxValue } from "./lox_object";
 
 export class LoxFunction implements LoxCallable {
-  constructor(private readonly declaration: FunctionStatement, readonly closure: Environment) { }
+  constructor(
+    private readonly declaration: FunctionStatement,
+    readonly closure: Environment,
+    readonly isInitializer = false
+  ) {}
 
   arity(): number {
     return this.declaration.params.length;
@@ -24,11 +29,21 @@ export class LoxFunction implements LoxCallable {
       interpreter.executeBlock(this.declaration.body, environment);
     } catch (r: unknown) {
       if (r instanceof LoxReturn) {
+        if (this.isInitializer) return this.closure.getAt(0, "this");
+
         return r.value;
       }
     }
 
+    if (this.isInitializer) return this.closure.getAt(0, "this");
+
     return null;
   }
 
+  bind(instance: LoxInstance) {
+    const environment = new Environment(this.closure);
+    environment.define("this", instance);
+
+    return new LoxFunction(this.declaration, environment, this.isInitializer);
+  }
 }

@@ -9,6 +9,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  ThisExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -31,7 +32,13 @@ import { Interpreter } from "../interpreter/interpreter";
 const enum FunctionType {
   NONE,
   FUNCTION,
+  INITIALIZER,
   METHOD,
+}
+
+const enum ClassType {
+  NONE,
+  CLASS,
 }
 
 export class Resolve
@@ -39,6 +46,7 @@ export class Resolve
 {
   private readonly scopes: Map<string, boolean>[] = [];
   private currentFunction: FunctionType = FunctionType.NONE;
+  private currentClass: ClassType = ClassType.NONE;
 
   constructor(private readonly interpreter: Interpreter) {}
 
@@ -65,13 +73,34 @@ export class Resolve
   }
 
   visitClassStatement(stmt: ClassStatement): void {
+    const enclosingClass = this.currentClass;
+    this.currentClass = ClassType.CLASS;
+
     this.declare(stmt.name);
     this.define(stmt.name);
+
+    this.beginScope();
+    this.scopes[this.scopes.length - 1].set("this", true);
+
+    if (
+      stmt.superClass !== null &&
+      stmt.name.lexeme === stmt.superClass.name.lexeme
+    ) {
+      this.error(`A class can't inherit from itself.`);
+    }
+
+    if (stmt.superClass !== null) {
+      this.resolve(stmt.superClass);
+    }
 
     for (const method of stmt.methods) {
       const declaration = FunctionType.METHOD;
       this.resolveFunction(method, declaration);
     }
+
+    this.endScope();
+
+    this.currentClass = enclosingClass;
   }
 
   visitFunctionStatement(stmt: FunctionStatement): void {
@@ -84,7 +113,12 @@ export class Resolve
     if (this.currentFunction === FunctionType.NONE)
       this.error("Can't return from top-level code.");
 
-    if (stmt.value !== null) this.resolve(stmt.value);
+    if (stmt.value !== null) {
+      if (this.currentFunction === FunctionType.INITIALIZER)
+        this.error("Can't return a value from an initializer.");
+
+      this.resolve(stmt.value);
+    }
   }
 
   visitIfStatement(stmt: IfStatement): void {
@@ -150,6 +184,14 @@ export class Resolve
   visitSetExpression(expr: SetExpression): void {
     this.resolve(expr.value);
     this.resolve(expr.object);
+  }
+
+  visitThisExpression(expr: ThisExpression): void {
+    if (this.currentClass === ClassType.NONE) {
+      this.error("Can't use 'this' outside of a class");
+    }
+
+    this.resolveLocal(expr, expr.keyword);
   }
 
   private declare(name: Token) {

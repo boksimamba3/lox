@@ -9,6 +9,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  ThisExpression,
   UnaryExpression,
   VariableExpression,
 } from "../ast/expression";
@@ -60,6 +61,7 @@ export class Interpreter
         this.execute(stmt);
       }
     } catch (err) {
+      console.log(err);
       throw new Error("Runtime error.");
     }
   }
@@ -83,15 +85,27 @@ export class Interpreter
   }
 
   visitClassStatement(stmt: ClassStatement): null {
+    let superClass: Object | null = null;
+    if (stmt.superClass !== null) {
+      superClass = this.evaluate(stmt.superClass);
+      if (!(superClass instanceof LoxClass)) {
+        throw new Error("Superclass must be a class.");
+      }
+    }
+
     this.environment.define(stmt.name.lexeme, null);
 
     const methods = new Map<string, LoxFunction>();
     for (const method of stmt.methods) {
-      const fn = new LoxFunction(method, this.environment);
+      const fn = new LoxFunction(
+        method,
+        this.environment,
+        method.name.lexeme === "init"
+      );
       methods.set(method.name.lexeme, fn);
     }
 
-    const cls = new LoxClass(stmt.name.lexeme, methods);
+    const cls = new LoxClass(stmt.name.lexeme, superClass, methods);
 
     this.environment.assign(stmt.name, cls);
 
@@ -219,6 +233,10 @@ export class Interpreter
     (object as LoxInstance).set(expr.name, value);
 
     return value;
+  }
+
+  visitThisExpression(expr: ThisExpression): Object | null {
+    return this.lookUpVariable(expr.keyword, expr);
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {
