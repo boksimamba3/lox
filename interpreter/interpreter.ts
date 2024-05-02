@@ -9,6 +9,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  SuperExpression,
   ThisExpression,
   UnaryExpression,
   VariableExpression,
@@ -95,6 +96,11 @@ export class Interpreter
 
     this.environment.define(stmt.name.lexeme, null);
 
+    if (stmt.superClass !== null) {
+      this.environment = new Environment(this.environment);
+      this.environment.define("super", superClass);
+    }
+
     const methods = new Map<string, LoxFunction>();
     for (const method of stmt.methods) {
       const fn = new LoxFunction(
@@ -106,6 +112,10 @@ export class Interpreter
     }
 
     const cls = new LoxClass(stmt.name.lexeme, superClass, methods);
+
+    if (superClass !== null) {
+      this.environment = this.environment.enclosing!;
+    }
 
     this.environment.assign(stmt.name, cls);
 
@@ -237,6 +247,19 @@ export class Interpreter
 
   visitThisExpression(expr: ThisExpression): Object | null {
     return this.lookUpVariable(expr.keyword, expr);
+  }
+
+  visitSuperExpression(expr: SuperExpression): Object | null {
+    const distance = this.locals.get(expr);
+    const superClass = this.environment.getAt(distance!, "super") as LoxClass;
+    const object = this.environment.getAt(distance! - 1, "this") as LoxInstance;
+
+    const method = superClass.findMethod(expr.method.lexeme);
+    if (method === null) {
+      throw new Error(`Undefined property '${expr.method.lexeme}'.`);
+    }
+
+    return method.bind(object);
   }
 
   visitBinaryExpression(expr: BinaryExpression): Object {

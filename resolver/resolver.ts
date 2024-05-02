@@ -9,6 +9,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  SuperExpression,
   ThisExpression,
   UnaryExpression,
   VariableExpression,
@@ -39,6 +40,7 @@ const enum FunctionType {
 const enum ClassType {
   NONE,
   CLASS,
+  SUBCLASS,
 }
 
 export class Resolve
@@ -79,9 +81,6 @@ export class Resolve
     this.declare(stmt.name);
     this.define(stmt.name);
 
-    this.beginScope();
-    this.scopes[this.scopes.length - 1].set("this", true);
-
     if (
       stmt.superClass !== null &&
       stmt.name.lexeme === stmt.superClass.name.lexeme
@@ -90,8 +89,17 @@ export class Resolve
     }
 
     if (stmt.superClass !== null) {
+      this.currentClass = ClassType.SUBCLASS;
       this.resolve(stmt.superClass);
     }
+
+    if (stmt.superClass !== null) {
+      this.beginScope();
+      this.scopes[this.scopes.length - 1].set("super", true);
+    }
+
+    this.beginScope();
+    this.scopes[this.scopes.length - 1].set("this", true);
 
     for (const method of stmt.methods) {
       const declaration = FunctionType.METHOD;
@@ -99,6 +107,10 @@ export class Resolve
     }
 
     this.endScope();
+
+    if (stmt.superClass !== null) {
+      this.endScope();
+    }
 
     this.currentClass = enclosingClass;
   }
@@ -191,6 +203,15 @@ export class Resolve
       this.error("Can't use 'this' outside of a class");
     }
 
+    this.resolveLocal(expr, expr.keyword);
+  }
+
+  visitSuperExpression(expr: SuperExpression): void {
+    if (this.currentClass === ClassType.NONE) {
+      this.error("Can't use 'super' outside of a class");
+    } else if (this.currentClass !== ClassType.SUBCLASS) {
+      this.error("Can't use 'super' in a class with no superclass.");
+    }
     this.resolveLocal(expr, expr.keyword);
   }
 

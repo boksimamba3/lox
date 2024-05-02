@@ -10,6 +10,7 @@ import {
   LiteralExpression,
   LogicalExpression,
   SetExpression,
+  SuperExpression,
   ThisExpression,
   UnaryExpression,
   VariableExpression,
@@ -450,7 +451,7 @@ export class Parser {
         "Expect superclass method name."
       );
 
-      //return new SuperExpression(keyword, method);
+      return new SuperExpression(keyword, method);
     }
 
     if (this.match(TokenType.Identifier))

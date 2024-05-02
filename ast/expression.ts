@@ -12,6 +12,7 @@ export interface ExpressionVisitor<T> {
   visitGetExpression(expr: GetExpression): T;
   visitSetExpression(expr: GetExpression): T;
   visitThisExpression(expr: ThisExpression): T;
+  visitSuperExpression(expr: SuperExpression): T;
 }
 
 export abstract class Expression {
@@ -118,5 +119,13 @@ export class ThisExpression implements Expression {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitThisExpression(this);
+  }
+}
+
+export class SuperExpression implements Expression {
+  constructor(readonly keyword: Token, readonly method: Token) {}
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitSuperExpression(this);
   }
 }
